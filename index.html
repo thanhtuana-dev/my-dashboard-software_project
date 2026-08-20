@@ -87,6 +87,29 @@ function initDashboard(data) {
 
 }
 </script>
+// --- ĐOẠN ĐÃ SỬA ĐỂ TỰ ĐỘNG CẬP NHẬT DATA MỚI XÓA CACHE ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Thêm đoạn mã thời gian phía sau (?v=ngày_giờ) để xóa cache trình duyệt hoàn toàn
+    const excelFileName = "data.xlsx?v=" + new Date().getTime(); 
+
+    fetch(excelFileName)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error("Không thể tải file dữ liệu từ máy chủ!");
+            }
+            return res.arrayBuffer();
+        })
+        .then(ab => {
+            const data = new Uint8Array(ab);
+            const workbook = XLSX.read(data, { type: 'array' });
+            
+            processExcelWorkbook(workbook);
+            console.log("Đã nạp thành công dữ liệu Excel mới nhất từ GitHub!");
+        })
+        .catch(err => {
+            console.error("Lỗi liên kết dữ liệu:", err);
+        });
+});
 
 <style>
 :root{--navy:#17365D;--blue:#2F75B5;--bg:#f3f6fa;--card:#fff;--line:#dfe5ed;--text:#172033;--muted:#6b778c;--red:#C00000;--orange:#F59E0B;--green:#2E7D32}
