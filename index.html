@@ -9,44 +9,82 @@
 <!-- 1. Nhúng thư viện SheetJS để trình duyệt tự đọc được file Excel -->
 <script src="https://jsdelivr.net"></script>
 
-<script>
-window.onload = function() {
-    // 2. Tên file Excel bạn sẽ đẩy lên GitHub (để cùng thư mục với file HTML)
-    const excelFileName = "data.xlsx"; 
+<script src="https://jsdelivr.net"></script>
+<script src="https://jsdelivr.net"></script>
 
-    // 3. Sử dụng Fetch API để tự động tải file Excel từ GitHub về bộ nhớ trình duyệt
+<script>
+// --- ĐOẠN 1: TỰ ĐỘNG LIÊN KẾT FILE EXCEL TRÊN GITHUB NGAY KHI TRANH TẢI XONG ---
+document.addEventListener('DOMContentLoaded', () => {
+    const excelFileName = "data.xlsx"; // File Excel phải nằm cùng thư mục với file HTML trên GitHub
+
     fetch(excelFileName)
         .then(res => {
             if (!res.ok) {
-                throw new Error("Không tìm thấy file Excel hoặc lỗi tải file!");
+                throw new Error("Không thể tải file dữ liệu từ máy chủ!");
             }
             return res.arrayBuffer();
         })
         .then(ab => {
-            // 4. Đọc dữ liệu từ file Excel
-            const wb = XLSX.read(ab, { type: "array" });
-            const firstSheetName = wb.SheetNames[0]; // Lấy trang tính (Sheet) đầu tiên
-            const sheet = wb.Sheets[firstSheetName];
+            // Chuyển mảng nhị phân về Uint8Array để đồng bộ 100% với hàm nạp file cũ của bạn
+            const data = new Uint8Array(ab);
+            const workbook = XLSX.read(data, { type: 'array' });
             
-            // 5. Chuyển đổi dữ liệu Excel thành định dạng JSON (Mảng đối tượng)
-            const jsonData = XLSX.utils.sheet_to_json(sheet);
-            
-            // 6. Truyền dữ liệu JSON này vào hàm xử lý giao diện Dashboard của bạn
-            initDashboard(jsonData);
+            // Ép dữ liệu chạy thẳng vào bộ máy xử lý chung
+            processExcelWorkbook(workbook);
+            console.log("Liên kết dữ liệu Excel từ GitHub thành công!");
         })
         .catch(err => {
-            console.error("Lỗi hệ thống:", err);
-            alert("Có lỗi khi tải dữ liệu Excel từ GitHub: " + err.message);
+            console.error("Lỗi liên kết dữ liệu:", err);
+            alert("Lỗi liên kết dữ liệu tự động. Vui lòng bấm nút 'Nạp Excel mới' để chọn file thủ công.");
         });
+});
+
+// --- ĐOẠN 2: BỘ TRUNG CHUYỂN DỮ LIỆU CHUNG CHO CẢ 2 CÁCH (TỰ ĐỘNG & NẠP TAY) ---
+function processExcelWorkbook(workbook) {
+    const firstSheetName = workbook.SheetNames[0]; 
+    const sheet = workbook.Sheets[firstSheetName];
+    const jsonData = XLSX.utils.sheet_to_json(sheet);
+    
+    // Đưa trực tiếp dữ liệu thô vào hàm xử lý giao diện Dashboard của bạn
+    initDashboard(jsonData);
+}
+
+// --- ĐOẠN 3: NÚT BẤM DÀNH CHO KHI BẠN MUỐN NẠP FILE KHÁC ĐÈ LÊN ---
+window.onload = function() {
+    const fileInput = document.getElementById('excelFile');
+    if (fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                processExcelWorkbook(workbook);
+                alert("Đã cập nhật số liệu mới từ file bạn vừa nạp!");
+            };
+            reader.readAsArrayBuffer(file);
+        });
+    }
 };
 
-// 7. Hàm tiếp nhận dữ liệu và hiển thị lên giao diện
+// --- ĐOẠN 4: HÀM KHỞI TẠO DASHBOARD GỐC CỦA BẠN ---
 function initDashboard(data) {
-    console.log("Dữ liệu Excel đã tải thành công:", data);
+    console.log("Dữ liệu gốc đã nạp vào Dashboard:", data);
     
-    // TẠI ĐÂY: Bạn hãy viết tiếp code JavaScript hiện tại của bạn 
-    // để duyệt qua biến 'data' và điền vào các bảng, biểu đồ trên Dashboard của bạn.
-    // Ví dụ: data[0]['Tên_Cột'] sẽ lấy ra dữ liệu của dòng đầu tiên.
+    // Cập nhật nhanh số liệu lên 3 ô KPI chính trên giao diện của bạn
+    if (document.getElementById('kPeople')) {
+        document.getElementById('kPeople').innerText = data.length; 
+    }
+    
+    // ==========================================
+    // CHÚ Ý: BẠN HÃY DÁN TOÀN BỘ PHẦN CODE JAVASCRIPT GỐC CỦA BẠN 
+    // (Đoạn mã dùng để tạo bộ lọc, vẽ Chart.js, hiển thị danh sách dòng dữ liệu...)
+    // NGAY DƯỚI DÒNG NÀY ĐỂ MỌI TÍNH NĂNG TỰ ĐỘNG CHẠY!
+    // ==========================================
+
 }
 </script>
 
